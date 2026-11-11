@@ -185,7 +185,7 @@
       :afterSkipAll="() => capture('onboarding_steps_skipped')"
       :afterReset="(step) => capture('onboarding_step_reset_' + step)"
       :afterResetAll="() => capture('onboarding_steps_reset')"
-      docsLink="https://docs.frappe.io/crm"
+      docsLink="https://www.linkedin.com/in/akashjadon"
     />
     <IntermediateStepModal
       v-model="showIntermediateModal"
