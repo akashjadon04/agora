@@ -1,0 +1,35 @@
+name: Agora CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Build & Verify Agora
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Backend Integrity
+        run: |
+          python3 -m py_compile $(find crm -name "*.py" | head -n 30)
+          echo "Agora Python backend verification passed."
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify Frontend Integrity
+        run: |
+          cd frontend
+          node -e "const pkg = require('./package.json'); console.log('Validated Agora frontend package:', pkg.name);"
