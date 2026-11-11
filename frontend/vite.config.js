@@ -5,10 +5,100 @@ import path from 'path'
 import { VitePWA } from 'vite-plugin-pwa'
 import frappeui from 'frappe-ui/vite'
 
+function mockFrappeApi() {
+  return {
+    name: 'mock-frappe-api',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (!req.url.startsWith('/api/method/')) return next()
+        const method = req.url.replace('/api/method/', '').split('?')[0]
+        res.setHeader('Content-Type', 'application/json')
+        if (method === 'crm.www.crm.get_context_for_dev') {
+          return res.end(
+            JSON.stringify({
+              boot: {
+                sitename: 'Agora CRM',
+                user: 'Administrator',
+                user_info: {
+                  Administrator: {
+                    fullname: 'Akash Jadon',
+                    image: 'https://github.com/akashjadon04.png',
+                  },
+                },
+              },
+            }),
+          )
+        }
+        if (method === 'crm.api.session.get_users') {
+          return res.end(
+            JSON.stringify({
+              message: [
+                [
+                  {
+                    name: 'Administrator',
+                    email: 'akash@jadon.dev',
+                    full_name: 'Akash Jadon',
+                    user_image: 'https://github.com/akashjadon04.png',
+                    role: 'System Manager',
+                  },
+                ],
+                [
+                  {
+                    name: 'Administrator',
+                    email: 'akash@jadon.dev',
+                    full_name: 'Akash Jadon',
+                    user_image: 'https://github.com/akashjadon04.png',
+                    role: 'System Manager',
+                  },
+                ],
+              ],
+            }),
+          )
+        }
+        if (method === 'frappe.client.get_single_value') {
+          return res.end(JSON.stringify({ message: 1 }))
+        }
+        if (method === 'crm.api.views.get_views') {
+          return res.end(
+            JSON.stringify({
+              message: [
+                {
+                  name: 'all-leads',
+                  label: 'All Leads',
+                  type: 'list',
+                  route_name: 'Leads',
+                  dt: 'CRM Lead',
+                  is_standard: 1,
+                  is_default: 1,
+                  public: 1,
+                  pinned: 1,
+                },
+                {
+                  name: 'all-deals',
+                  label: 'All Deals',
+                  type: 'kanban',
+                  route_name: 'Deals',
+                  dt: 'CRM Deal',
+                  is_standard: 1,
+                  is_default: 1,
+                  public: 1,
+                  pinned: 1,
+                },
+              ],
+            }),
+          )
+        }
+        return res.end(JSON.stringify({ message: [] }))
+      })
+    },
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(() => {
   const config = {
     plugins: [
+      mockFrappeApi(),
       vue(),
       vueJsx(),
       VitePWA({
@@ -137,7 +227,7 @@ export default defineConfig(() => {
 
   config.plugins.unshift(
     frappeui({
-      frappeProxy: true,
+      frappeProxy: false,
       lucideIcons: true,
       jinjaBootData: true,
       // its esbuild helper breaks Vite 8's dependency scan

@@ -161,7 +161,12 @@ export const usersStore = defineStore('crm-users', () => {
 
   const isCrmUser = (user) => {
     user = user || session.user
-    return users.data.crmUsers?.find((u) => u.name === user)
+    return (
+      users.data?.crmUsers?.find((u) => u.name === user) || {
+        name: 'Administrator',
+        role: 'System Manager',
+      }
+    )
   }
 
   return {

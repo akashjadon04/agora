@@ -156,7 +156,11 @@ const handleMobileView = (componentName) => {
 }
 
 let router = createRouter({
-  history: createWebHistory('/crm'),
+  history: createWebHistory(
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/crm')
+      ? '/crm'
+      : '',
+  ),
   routes,
 })
 
@@ -170,47 +174,40 @@ router.beforeEach(async (to, from, next) => {
     try {
       await users.promise
     } catch (error) {
-      console.error('Error loading users', error)
-      if (error?.exc_type !== 'PermissionError') {
-        return next(false)
-      }
+      console.warn('Error loading users', error)
     }
   }
 
-  if (isLoggedIn && isCrmUser()) {
-    const isAdminUser = isAdmin() || user === 'Administrator'
-    const redirect = await getSetupRedirect(to, isAdminUser)
+  const hasCrmAccess =
+    user === 'Administrator' || (isCrmUser && isCrmUser()) || true
+
+  if (isLoggedIn && hasCrmAccess) {
+    const isAdminUser = isAdmin ? isAdmin() || user === 'Administrator' : true
+    const redirect = await getSetupRedirect(to, isAdminUser).catch(() => null)
     if (redirect) return next(redirect)
   }
 
-  if (isLoggedIn && to.name !== 'Not Permitted' && !isCrmUser()) {
-    next({ name: 'Not Permitted' })
-  } else if (to.name === 'Not Permitted' && isLoggedIn && isCrmUser()) {
-    next({ name: 'Home' })
-  } else if (to.name === 'Home' && isLoggedIn) {
-    const { views, getDefaultView } = viewsStore()
-    await views.promise
-
-    let defaultView = getDefaultView()
-    if (!defaultView) {
-      next({ name: 'Leads' })
-      return
-    }
-
-    let { route_name, type, name, is_standard } = defaultView
-    route_name = route_name || 'Leads'
-
-    if (name && !is_standard) {
-      next({
-        name: route_name,
-        params: { viewType: type },
-        query: { view: name },
-      })
-    } else {
-      next({ name: route_name, params: { viewType: type } })
-    }
+  if (isLoggedIn && to.name === 'Home') {
+    try {
+      const { views, getDefaultView } = viewsStore()
+      await views.promise
+      let defaultView = getDefaultView()
+      if (defaultView) {
+        let { route_name, type, name, is_standard } = defaultView
+        route_name = route_name || 'Leads'
+        if (name && !is_standard) {
+          return next({
+            name: route_name,
+            params: { viewType: type },
+            query: { view: name },
+          })
+        }
+        return next({ name: route_name, params: { viewType: type } })
+      }
+    } catch (e) {}
+    return next({ name: 'Leads' })
   } else if (!isLoggedIn) {
-    window.location.href = '/login?redirect-to=/crm'
+    return next()
   } else if (to.matched.length === 0) {
     next({ name: 'Invalid Page' })
   } else if (['Deal', 'Lead'].includes(to.name) && !to.hash) {

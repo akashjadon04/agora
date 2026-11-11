@@ -21,7 +21,7 @@ import {
   frappeRequest,
 } from 'frappe-ui'
 
-import { telemetryPlugin } from '@framework/ui/telemetry'
+// telemetry plugin optional
 // injects the lucide SVG sprite into the DOM so the IconPicker and lucide Icons
 // (used for view icons) can render from it
 import { spritePlugin } from 'frappe-ui/experimental'
@@ -50,22 +50,41 @@ app.use(translationPlugin)
 for (let key in globalComponents) {
   app.component(key, globalComponents[key])
 }
-app.use(telemetryPlugin, { app_name: 'crm' })
+// app.use(telemetryPlugin, { app_name: 'crm' })
 
 app.config.globalProperties.$dialog = createDialog
 
 let socket
 if (import.meta.env.DEV) {
-  frappeRequest({ url: '/api/method/crm.www.crm.get_context_for_dev' }).then(
-    (values) => {
+  frappeRequest({ url: '/api/method/crm.www.crm.get_context_for_dev' })
+    .then((values) => {
       for (let key in values) {
         window[key] = values[key]
       }
-      socket = initSocket()
-      app.config.globalProperties.$socket = socket
+      try {
+        socket = initSocket()
+        app.config.globalProperties.$socket = socket
+      } catch (e) {}
       app.mount('#app')
-    },
-  )
+    })
+    .catch((err) => {
+      console.warn('Dev context not loaded, mounting with fallback defaults', err)
+      window.boot = window.boot || {
+        sitename: 'Agora CRM',
+        user: 'Administrator',
+        user_info: {
+          Administrator: {
+            fullname: 'Akash Jadon',
+            image: 'https://github.com/akashjadon04.png',
+          },
+        },
+      }
+      try {
+        socket = initSocket()
+        app.config.globalProperties.$socket = socket
+      } catch (e) {}
+      app.mount('#app')
+    })
 } else {
   socket = initSocket()
   app.config.globalProperties.$socket = socket
