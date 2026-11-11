@@ -152,13 +152,13 @@ export default defineConfig(() => {
         // `@whatsapp/ui/components/Messages` resolve to a real file
         '@whatsapp/ui': path.resolve(
           import.meta.dirname,
-          '../../whatsapp/ui/src',
+          'src/whatsapp-stub',
         ),
         // same shape for @framework/ui: its account form pieces (Grid, Link) are
         // what @whatsapp/ui's AccountForm is built on
         '@framework/ui': path.resolve(
           import.meta.dirname,
-          '../../frappe/ui/src',
+          'src/framework-stub',
         ),
       },
       // ensure the linked @whatsapp/ui package reuses the host app's single copy of each peer:
